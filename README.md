@@ -37,11 +37,11 @@ Experiment C: Associate abundance was found to have an effect, albeit weak, on e
 
 | Folder | File | Contents |
 | --- | --- | --- |
-| Experiment A &nbsp;| parentalcare_data.xlsx | Raw data associated with Experiment A |
+| Experiment A &nbsp;&nbsp;| parentalcare_data.xlsx | Raw data associated with Experiment A |
 |              | EmbryoBurying_ParentalCare_JMP.pdf | PDF of JMP output, for reproducability |
 |              | EmbryoBurying_ParentalCare.R | R script that replicates JMP analysis, for users that prefer this method |
-| Experiment B &nbsp;| README.md | ReadMe file outlines where to find the data and codes for this experiement, within a co-author's GitHub |
-| Experiment C &nbsp;| nestattendance_data.csv | Raw data associated with Experiment C |
+| Experiment B &nbsp;&nbsp;| README.md | ReadMe file outlines where to find the data and codes for this experiment, within a co-author's GitHub |
+| Experiment C &nbsp;&nbsp;| nestattendance_data.csv | Raw data associated with Experiment C |
 |              | EmbryoPredation_NestAttendance.R | R Script for analysis for Exp. C |
 
 ## Funding and Acknowledgments
