@@ -1,0 +1,143 @@
+---
+title: "EmbryoPredation_NestAttendance"
+author: "MB"
+date: "11/9/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 6)
+```
+
+# Introduction
+
+This experiment tests how predation risk for unburied embryos changes across the horizontal nest landscape under varying nest associate abundances.
+
+# Package Installation and Loading
+
+```{r packages, results='hide'}
+# Install required packages (run once)
+packages <- c("ggplot2", "dplyr", "AICcmodavg", "lme4")
+# Check if packages are installed, install if not
+new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+
+# Load all packages
+library(ggplot2)
+library(dplyr)
+library(AICcmodavg)
+library(lme4)
+
+# Set options
+options(prompt = "=")
+```
+
+# Data Import and Preparation
+
+```{r data-import}
+# Read in csv files and sort data
+predation <- read.csv("eggstealing2023.csv")
+predation_s <- predation[order(predation$assoc_abund), ]
+
+# plot mortality trend
+ggplot(predation_s, aes(x = seq_along(mortality), y = mortality)) +
+  geom_point(color = "darkgrey") +
+  geom_smooth(method = "loess", span = 0.75, se = FALSE, color = "blue") +
+  labs(
+    title = "Smoothed Mortality (ordered by assoc_abund)",
+    x = "Observation index (sorted)",
+    y = "Mortality"
+  ) +
+  theme_minimal(base_size = 14)
+
+# plot mortality vs. associate abundance
+ggplot(predation_s, aes(x = assoc_abund, y = mortality)) +
+  geom_point(color = "purple", alpha = 0.7, size = 2) +
+  geom_smooth(method = "loess", span = 0.75, se = TRUE, color = "black") +
+  labs(
+    title = "Mortality vs. Associated Abundance",
+    x = "Associated Abundance",
+    y = "Mortality"
+  ) +
+  theme_minimal(base_size = 14)
+
+# optional: subset and compare groups
+
+# create combined groups as needed
+up <- predation_s[which(predation_s$hpos=='up'),]
+mid <- predation_s[which(predation_s$hpos=='mid'),]
+down <- predation_s[which(predation_s$hpos=='down'),]
+upmid <- filter(predation, hpos %in% c("up", "mid")) %>% arrange(assoc_abund)
+updown <- filter(predation, hpos %in% c("up", "down")) %>% arrange(assoc_abund)
+
+# example plots for these combined groups
+ggplot(upmid, aes(x = assoc_abund, y = mortality)) +
+  geom_point(alpha = 0.6, color = "purple") +
+  geom_smooth(method = "loess", span = 0.75, se = FALSE, color = "black") +
+  labs(title = "Up + Mid Positions", x = "Associated Abundance", y = "Mortality") +
+  theme_minimal(base_size = 14)
+
+ggplot(updown, aes(x = assoc_abund, y = mortality)) +
+  geom_point(alpha = 0.6, color = "darkgreen") +
+  geom_smooth(method = "loess", span = 0.75, se = FALSE, color = "black") +
+  labs(title = "Up + Down Positions", x = "Associated Abundance", y = "Mortality") +
+  theme_minimal(base_size = 14)
+
+```
+# Embryo Predation Modeling
+
+```{r models with all bait}
+pred0 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID), family=binomial(link="logit"), data=predation)
+pred1 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + subsample,
+              family=binomial(link="logit"), data=predation)
+pred2 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ hpos + subsample,
+              family=binomial(link="logit"), data=predation)
+pred3 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + subsample,
+              family=binomial(link="logit"), data=predation)
+summary(pred0)
+summary(pred1)
+summary(pred2)
+summary(pred3)
+```
+# Embryo Predation Modeling (upstream and downstream bait only)
+
+```{r models with up/down bait}
+pred01 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID), family=binomial(link="logit"), data=updown)
+pred11 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + subsample,
+               family=binomial(link="logit"), data=updown)
+summary(pred11)
+```
+
+# Embryo Predation Modeling (upstream bait only)
+
+```{r models with up/down bait}
+pred02 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID),
+               family=binomial(link="logit"), data=up)
+pred12 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund +
+                       subsample,
+               family=binomial(link="logit"), data=up)
+summary(pred12)
+```
+
+# IT Comparisons of models based on all bait data
+
+```{r models with up/down bait}
+Cand.models <- list(pred0,pred1,pred2,pred3)
+Modnames <- c("Null Model", "Full Model", "No assoc abundance Model", "No horizontal position Model")
+
+print(aictab(cand.set = Cand.models, modnames = Modnames, second.ord = TRUE), digits = 2)
+
+# Check singularity
+cat("Singularity check embryo predation models:", sapply(Cand.models, isSingular), "\n")
+
+ggplot(predation, aes(x = factor(hpos), y = pct_mort)) +
+  geom_boxplot(fill = "blueviolet", color = "black") +
+  labs(title = "Egg mortality by horizontal position",
+       x = "Horizontal position",
+       y = "Egg mortality (%)") +
+  theme_classic() +
+  theme(text = element_text(size = 18),
+        axis.text = element_text(size = 18),
+        axis.title = element_text(size = 18),
+        plot.title = element_text(size = 18))
+```
