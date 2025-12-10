@@ -34,7 +34,7 @@ Read your data
 
 ```{r data-import}
 # Read in excel sheet
-data <- read_excel("embryostealing_2021.xlsx")
+data <- read_excel("parentalcare_data.xlsx")
 
 # View data to check import
 head(data)
@@ -54,6 +54,27 @@ table(data$hpos, data$vpos)
 Fit mixed-effects model with nest as random effect
 
 ```{r model}
+#new data model
+survival <- lmer(
+  percentsurvival ~ vpos * hpos +
+    (1 | nest) +
+    (1 | subsample),
+  data = data
+)
+
+summary(survival)
+anova(survival, type = 3)
+
+survival2 <- lmer(
+  percentsurvival ~ vpos * hpos +
+    (1 | nest),
+  data = data
+)
+
+summary(survival2)
+
+anova(survival2, type = 3)
+
 # Model percent survival by pouch location
 model <- lmer(percentsurvival ~ hpos * vpos + (1|nest), data = data)
 
