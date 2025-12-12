@@ -9,11 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 6)
 ```
 
-# Introduction
+Introduction
 
 This experiment tests how predation risk for unburied embryos changes across the horizontal nest landscape under varying nest associate abundances.
 
-# Package Installation and Loading
+Package Installation and Loading
 
 ```{r packages, results='hide'}
 # Install required packages (run once)
@@ -32,11 +32,11 @@ library(lme4)
 options(prompt = "=")
 ```
 
-# Data Import and Preparation
+Data Import and Preparation
 
 ```{r data-import}
 # Read in csv files and sort data
-predation <- read.csv("eggstealing2023.csv")
+predation <- read.csv("nestattendance_data.csv")
 predation_s <- predation[order(predation$assoc_abund), ]
 
 # plot mortality trend
@@ -84,44 +84,44 @@ ggplot(updown, aes(x = assoc_abund, y = mortality)) +
   theme_minimal(base_size = 14)
 
 ```
-# Embryo Predation Modeling
+Embryo Predation Modeling
 
 ```{r models with all bait}
 pred0 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID), family=binomial(link="logit"), data=predation)
-pred1 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + subsample,
+pred1 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + (1|subsample),
               family=binomial(link="logit"), data=predation)
-pred2 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ hpos + subsample,
+pred2 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ hpos + (1|subsample),
               family=binomial(link="logit"), data=predation)
-pred3 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + subsample,
+pred3 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + (1|subsample),
               family=binomial(link="logit"), data=predation)
 summary(pred0)
 summary(pred1)
 summary(pred2)
 summary(pred3)
 ```
-# Embryo Predation Modeling (upstream and downstream bait only)
+Embryo Predation Modeling (upstream and downstream bait only)
 
 ```{r models with up/down bait}
 pred01 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID), family=binomial(link="logit"), data=updown)
-pred11 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + subsample,
+pred11 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund + hpos + (1|subsample),
                family=binomial(link="logit"), data=updown)
 summary(pred11)
 ```
 
-# Embryo Predation Modeling (upstream bait only)
+Embryo Predation Modeling (upstream bait only)
 
 ```{r models with up/down bait}
 pred02 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID),
                family=binomial(link="logit"), data=up)
 pred12 <- glmer(cbind(mortality, bait_ct-mortality) ~ (1|nestID)+ assoc_abund +
-                       subsample,
+                       (1|subsample),
                family=binomial(link="logit"), data=up)
 summary(pred12)
 ```
 
-# IT Comparisons of models based on all bait data
+IT Comparisons of models based on all bait data
 
-```{r models with up/down bait}
+```{r models with all bait}
 Cand.models <- list(pred0,pred1,pred2,pred3)
 Modnames <- c("Null Model", "Full Model", "No assoc abundance Model", "No horizontal position Model")
 
@@ -129,15 +129,58 @@ print(aictab(cand.set = Cand.models, modnames = Modnames, second.ord = TRUE), di
 
 # Check singularity
 cat("Singularity check embryo predation models:", sapply(Cand.models, isSingular), "\n")
-
-ggplot(predation, aes(x = factor(hpos), y = pct_mort)) +
-  geom_boxplot(fill = "blueviolet", color = "black") +
-  labs(title = "Egg mortality by horizontal position",
-       x = "Horizontal position",
-       y = "Egg mortality (%)") +
-  theme_classic() +
-  theme(text = element_text(size = 18),
-        axis.text = element_text(size = 18),
-        axis.title = element_text(size = 18),
-        plot.title = element_text(size = 18))
 ```
+
+Creating Survival Plot
+
+```{r create plot of survival}
+plot1 <- data.frame(
+  location = rep(c("up", "mid", "down"), each = 30),
+  survival = c(
+    rnorm(30, mean = 85, sd = 15),
+    c(rnorm(15, mean = 90, sd = 8), rnorm(15, mean = 40, sd = 25)),
+    c(rnorm(20, mean = 85, sd = 20), rnorm(10, mean = 20, sd = 20))
+  )
+)
+predation$pct_surv <- pmax(0, pmin(100, predation$pct_surv))
+
+# Recode location values and set factor order
+predation$location <- factor(predation$hpos, 
+                       levels = c("up", "mid", "down"),
+                       labels = c("upstream", "middle", "downstream"))
+
+# Create the plot - USE THE NEW location COLUMN, NOT hpos
+plotS1 <- ggplot(predation, aes(x = location, y = pct_surv)) +
+  geom_boxplot(fill = "white", color = "black", linewidth = 0.8) +
+  scale_y_continuous(
+    limits = c(-2, 105),
+    breaks = seq(0, 100, 25),
+    expand = c(0, 0)
+  ) +
+  labs(
+    x = "Pouch Location",
+    y = "Embryo Survival (%)"
+  ) +
+  theme_classic() +
+  theme(
+    text = element_text(family = "Arial"),
+    axis.title = element_text(size = 12, color = "black", family = "Arial"),
+    axis.text = element_text(size = 11, color = "black", family = "Arial"),
+    axis.line = element_line(color = "black", linewidth = 0.8),
+    axis.ticks = element_line(color = "black", linewidth = 0.8),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+plotS1
+
+ggsave("FigureS1AppendixS4.tiff",
+       plot = plotS1,
+       dpi = 600,
+       width = 6, height = 5, units = "in",
+       device = "tiff",
+       compression = "lzw")
+```
+       
+       
+       
