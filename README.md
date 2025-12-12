@@ -45,3 +45,5 @@ Experiment C: Associate abundance was found to have an effect, albeit weak, on e
 
 ## Funding and Acknowledgments
 This study was supported by the National Science Foundation (grant number 2039692). The participation of coauthor E. H. was supported in part by the Virginia Agricultural Experiment Station under the US Department of Agriculture’s National Institute of Food and Agriculture program. We would like to thank Samantha Brooks, Nathan Ferguson, Stephen Floyd, Maddie Harris, Katie Mowry, Brandon Peoples, Emily Shawish, Kyle Tanner, and Skylar Wolf for their help in the field and laboratory.
+
+[![DOI](https://zenodo.org/badge/1092950392.svg)](https://doi.org/10.5281/zenodo.17916898)
